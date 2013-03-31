@@ -5,3 +5,8 @@
  * Copyright 2013 Amr N Tamimi and other contributors; Licensed MIT
  */
 
+(function() {
+    var X;
+    X = X || {};
+    window.X = X;
+}).call(this);

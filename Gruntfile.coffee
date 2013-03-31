@@ -1,5 +1,5 @@
-jsFiles = [
-  'src/init.js'
+coffeeFiles = [
+  'src/init.coffee'
 ]
 
 module.exports = (grunt) ->
@@ -10,6 +10,7 @@ module.exports = (grunt) ->
     # Metadata.
     pkg: grunt.file.readJSON('package.json')
     buildDir: 'dist'
+    compileDir: 'compile'
     banner: """
       /*!
        * <%= pkg.title || pkg.name %> <%= pkg.version %>
@@ -20,15 +21,24 @@ module.exports = (grunt) ->
     """
 
     # Task configuration.
+
+    coffee:
+      options:
+        join: true
+        bare: false
+      compile:
+        src: [coffeeFiles]
+        dest: '<%= compileDir %>/compiled.js'
+
     concat:
       options:
         banner: '<%= banner %>'
         stripBanners: true
       js:
-        src: [jsFiles]
+        src: '<%= coffee.compile.dest %>'
         dest: '<%= buildDir %>/x-sdk.js'
       jsmin:
-        src: [jsFiles]
+        src: '<%= coffee.compile.dest %>'
         dest: '<%= buildDir %>/x-sdk.min.js'
 
     uglify:
@@ -51,13 +61,13 @@ module.exports = (grunt) ->
     jshint:
       options:
         jshintrc: '.jshintrc'
-      src: jsFiles
+      src: '<%= concat.js.dest %>'
       tests: ['test/*.js']
       gruntfile: ['Gruntfile.js']
 
     jasmine:
       js:
-        src: jsFiles
+        src: '<%= concat.js.dest %>'
         options:
           specs: 'test/*_spec.js'
           helpers: 'test/helpers/*'
@@ -65,7 +75,7 @@ module.exports = (grunt) ->
 
     watch:
       js:
-        files: jsFiles,
+        files: [coffeeFiles],
         tasks: 'build:js'
 
     exec:
@@ -73,17 +83,18 @@ module.exports = (grunt) ->
         cmd: 'open _SpecRunner.html'
 
     clean:
-      dist: 'dist'
+      dist: ['compile', 'dist']
 
   # Default task.
   grunt.registerTask 'default', 'build'
-  grunt.registerTask 'build', ['concat:js', 'concat:jsmin', 'uglify']
-  grunt.registerTask 'lint', 'jshint'
-  grunt.registerTask 'test', 'jasmine:js'
-  grunt.registerTask 'test:browser', ['jasmine:js:build', 'exec:open_spec_runner']
+  grunt.registerTask 'build', ['coffee:compile', 'concat:js', 'concat:jsmin', 'uglify']
+  grunt.registerTask 'lint', ['build', 'jshint']
+  grunt.registerTask 'test', ['build', 'jasmine:js']
+  grunt.registerTask 'test:browser', ['build', 'jasmine:js:build', 'exec:open_spec_runner']
 
   # These plugins provide necessary tasks.
   grunt.loadNpmTasks 'grunt-exec'
+  grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-jshint'
